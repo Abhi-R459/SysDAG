@@ -1,0 +1,47 @@
+schema_version = "1.0"
+tracer = "strace"
+process_scope = "process_tree"
+syscall_classes = ["file", "descriptor", "network", "process"]
+
+[window]
+size = 100
+overlap = 20
+flush_on_exec = true
+include_incomplete_tail = true
+
+[graph]
+fd_policy = "last_event_chain"
+buffer_flow = true
+buffer_heuristic = "address_or_last_writer"
+external_anchors = true
+seed_stdio = true
+
+[labels]
+include_exact_path = false
+include_path_class = true
+include_fd_number = false
+app_root = ""
+
+[wl]
+iterations = 3
+directed = true
+edge_typed = true
+digest = "sha256"
+
+[detector]
+exact_weight = 0.15
+similarity_weight = 0.65
+size_weight = 0.10
+risk_weight = 0.10
+threshold_review = 0.35
+threshold_alert = 0.45
+max_prototypes = 4000
+
+[sandbox]
+backend = "auto"
+memory_mb = 256
+cpus = 1.0
+timeout_sec = 90
+network = "none"
+image = "sysdag-microvm:1.0"
+guest_arch = "auto"
