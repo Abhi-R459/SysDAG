@@ -8,7 +8,7 @@ use sysdag::config::Config;
 use sysdag::help::{ABOUT, HELP};
 use sysdag::pipeline::{analyze_path, print_report, run_demo, Mode};
 use sysdag::sandbox::doctor;
-use sysdag::tui::{self, Session};
+use sysdag::tui::{self, LandingAction, Session};
 use sysdag::visualizer::to_dot;
 
 #[derive(Parser, Debug)]
@@ -137,6 +137,23 @@ fn real_main() -> Result<i32> {
         ),
         None => {
             let Some(path) = cli.path else {
+                if tui::should_open(cli.plain, cli.json) {
+                    return match tui::run_landing()? {
+                        LandingAction::Quit => Ok(0),
+                        LandingAction::Demo => run_demo(&cfg, &work, cli.json),
+                        LandingAction::Run { path, args } => dispatch(
+                            &path,
+                            Mode::Auto,
+                            &cfg,
+                            &work,
+                            &baseline_dir,
+                            &args,
+                            cli.json,
+                            cli.plain,
+                            cli.id.as_deref(),
+                        ),
+                    };
+                }
                 print!("{HELP}");
                 return Ok(0);
             };

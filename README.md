@@ -3,6 +3,12 @@
 Rust CLI that turns a Linux process into **typed syscall dependency DAGs**, fingerprints each window with **directed Weisfeiler–Lehman refinement**, and scores it against a clean baseline.
 
 ```text
+sysdag
+```
+
+opens the landing app on a TTY: type a path and press enter, `d` for the demo, `?` for commands, `q` to quit. `--plain` / `--json` (or a non-TTY stdout) still print the command list.
+
+```text
 sysdag <file>
 ```
 
@@ -38,7 +44,7 @@ sysdag doctor
 
 ## Usage
 
-After a run, SysCall-DAG opens a viewer: a score meter, the syscall DAG, and why it decided. Use `--plain` for a text report, `--help` for the command list.
+Bare `sysdag` opens the landing. After a run, SysCall-DAG opens a viewer: a score meter, the syscall DAG, and why it decided. Use `--plain` for a text report, `--help` for the command list.
 
 ```bash
 # first run of a program: train (then the TUI)

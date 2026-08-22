@@ -1,4 +1,4 @@
-//! Full-screen SysDAG app: stable chrome, two-tier FPS, restrained motion.
+//! Full-screen SysDAG app: landing spectacle, then a restrained analysis viewer.
 
 use std::io::{self, stdout, IsTerminal};
 use std::time::{Duration, Instant};
@@ -14,10 +14,12 @@ use ratatui::Terminal;
 
 mod app;
 mod draw;
+mod landing;
 mod motion;
 mod theme;
 
 pub use app::Session;
+pub use landing::{run_landing, LandingAction};
 
 use app::{App, View};
 use draw::draw;

@@ -6,6 +6,7 @@ pub const HELP: &str = "\
 sysdag — show how a process used the kernel
 
 USAGE
+  sysdag                       open the landing app (TTY)
   sysdag <file> [args]         run, then show the graph
   sysdag train <file>          write a clean baseline
   sysdag monitor <file>        score against a baseline
@@ -25,7 +26,13 @@ OPTIONS
 <file> is a .c / .py / .sh program, a Linux ELF, or an strace log.
 First run trains. Later runs of the same file monitor.
 
-In the app
+On the landing
+  type a path + enter   run
+  d                     demo
+  ?                     commands
+  q                     quit
+
+In the viewer
   tab  1-4   overview / graph / events / inspect
   j k        move
   [ ]        window
