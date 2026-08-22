@@ -10,6 +10,7 @@ pub mod labels;
 pub mod pipeline;
 pub mod sandbox;
 pub mod tracer;
+pub mod tui;
 pub mod visualizer;
 
 pub use config::Config;

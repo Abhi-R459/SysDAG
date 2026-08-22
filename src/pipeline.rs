@@ -25,7 +25,7 @@ pub enum Mode {
     Monitor,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RunReport {
     pub mode: Mode,
     pub target_sha256: String,

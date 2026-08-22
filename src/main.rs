@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 use sysdag::config::Config;
 use sysdag::pipeline::{analyze_path, print_report, run_demo, Mode};
 use sysdag::sandbox::doctor;
+use sysdag::tui::{self, TuiOpts};
 use sysdag::visualizer::to_dot;
 
 #[derive(Parser, Debug)]
@@ -31,6 +32,10 @@ struct Cli {
 
     #[arg(long, global = true)]
     json: bool,
+
+    /// Skip the TUI and print a plain report
+    #[arg(long, global = true)]
+    plain: bool,
 
     #[arg(long, global = true)]
     workdir: Option<PathBuf>,
@@ -101,6 +106,7 @@ fn real_main() -> Result<i32> {
             &baseline_dir,
             &args.target_args,
             cli.json,
+            cli.plain,
             cli.id.as_deref(),
         ),
         Some(Command::Monitor(args)) => dispatch(
@@ -111,6 +117,7 @@ fn real_main() -> Result<i32> {
             &baseline_dir,
             &args.target_args,
             cli.json,
+            cli.plain,
             cli.id.as_deref(),
         ),
         Some(Command::Run(args)) => dispatch(
@@ -121,6 +128,7 @@ fn real_main() -> Result<i32> {
             &baseline_dir,
             &args.target_args,
             cli.json,
+            cli.plain,
             cli.id.as_deref(),
         ),
         None => {
@@ -135,6 +143,7 @@ fn real_main() -> Result<i32> {
                 &baseline_dir,
                 &cli.target_args,
                 cli.json,
+                cli.plain,
                 cli.id.as_deref(),
             )
         }
@@ -149,6 +158,7 @@ fn dispatch(
     baseline_dir: &std::path::Path,
     target_args: &[String],
     json: bool,
+    plain: bool,
     identity: Option<&str>,
 ) -> Result<i32> {
     if !path.exists() {
@@ -164,5 +174,14 @@ fn dispatch(
         true,
         identity,
     )?;
+    if tui::should_open(plain, json) {
+        return tui::run(
+            report,
+            TuiOpts {
+                target: path.display().to_string(),
+                target_args: target_args.to_vec(),
+            },
+        );
+    }
     print_report(&report, json)
 }

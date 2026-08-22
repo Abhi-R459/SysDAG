@@ -38,12 +38,17 @@ sysdag doctor
 
 ## Usage
 
+After a run, SysCall-DAG opens a **Posting-style TUI**: collection of windows on the left, request tabs (Events / Graph / Fingerprint), and a response pane for the decision. Use `--plain` to keep the old text report.
+
 ```bash
-# first run of a program: train
+# first run of a program: train (then the TUI)
 sysdag examples/workload.c clean
 
 # later run: monitor
 sysdag examples/workload.c attack
+
+# text only
+sysdag --plain examples/workload.c attack
 
 # explicit modes
 sysdag train tests/fixtures/clean.strace
