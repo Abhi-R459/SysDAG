@@ -5,16 +5,20 @@ use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
 
 use sysdag::config::Config;
+use sysdag::help::{ABOUT, HELP};
 use sysdag::pipeline::{analyze_path, print_report, run_demo, Mode};
 use sysdag::sandbox::doctor;
-use sysdag::tui::{self, TuiOpts};
+use sysdag::tui::{self, Session};
 use sysdag::visualizer::to_dot;
 
 #[derive(Parser, Debug)]
 #[command(
     name = "sysdag",
     version,
-    about = "Process anomaly detection via syscall dependency graphs and WL fingerprints"
+    about = ABOUT,
+    after_help = HELP,
+    help_template = "{after-help}",
+    disable_help_subcommand = true
 )]
 struct Cli {
     #[command(subcommand)]
@@ -133,7 +137,8 @@ fn real_main() -> Result<i32> {
         ),
         None => {
             let Some(path) = cli.path else {
-                bail!("usage: sysdag <file>\n       sysdag train|monitor|demo|doctor|viz");
+                print!("{HELP}");
+                return Ok(0);
             };
             dispatch(
                 &path,
@@ -164,6 +169,17 @@ fn dispatch(
     if !path.exists() {
         bail!("{} does not exist", path.display());
     }
+    if tui::should_open(plain, json) {
+        return tui::run(Session {
+            path: path.to_path_buf(),
+            mode,
+            cfg: cfg.clone(),
+            work: work.to_path_buf(),
+            baseline_dir: baseline_dir.to_path_buf(),
+            target_args: target_args.to_vec(),
+            identity: identity.map(str::to_string),
+        });
+    }
     let report = analyze_path(
         path,
         mode,
@@ -174,14 +190,5 @@ fn dispatch(
         true,
         identity,
     )?;
-    if tui::should_open(plain, json) {
-        return tui::run(
-            report,
-            TuiOpts {
-                target: path.display().to_string(),
-                target_args: target_args.to_vec(),
-            },
-        );
-    }
     print_report(&report, json)
 }

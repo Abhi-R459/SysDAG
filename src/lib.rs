@@ -6,6 +6,7 @@ pub mod detector;
 pub mod event;
 pub mod features;
 pub mod graph;
+pub mod help;
 pub mod labels;
 pub mod pipeline;
 pub mod sandbox;
