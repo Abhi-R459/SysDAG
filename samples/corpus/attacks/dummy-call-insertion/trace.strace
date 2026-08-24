@@ -1,0 +1,5 @@
+1000.000001 openat(AT_FDCWD, "/guest/www/index.html", O_RDONLY) = 3</guest/www/index.html>
+1000.000002 read(3</guest/www/index.html>, "ok", 16) = 2
+1000.000003 getpid() = 100
+1000.000004 getpid() = 100
+1000.000005 close(3</guest/www/index.html>) = 0

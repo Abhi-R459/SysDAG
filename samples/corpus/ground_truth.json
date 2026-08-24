@@ -1,0 +1,8 @@
+{
+  "clean/benign-update/trace.strace": "clean",
+  "attacks/decoy-traversal/trace.strace": "attack",
+  "attacks/read-socket-exfiltration/trace.strace": "attack",
+  "attacks/shell-spawn/trace.strace": "attack",
+  "attacks/dummy-call-insertion/trace.strace": "attack",
+  "attacks/window-boundary-edge/trace.strace": "attack"
+}

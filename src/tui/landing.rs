@@ -7,7 +7,9 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::Style;
@@ -37,8 +39,8 @@ const LOGO: &[&str] = &[
 const TAGLINE: &str = "process graphs  ·  WL fingerprints  ·  micro-VM tracing";
 
 const RAIN: &[char] = &[
-    '0', '1', 'ｱ', 'ﾊ', 'ﾐ', 'ﾋ', 'ｰ', 'ｳ', 'ｼ', 'ﾅ', 'ﾓ', 'ﾆ', 'ｻ', 'ﾜ', 'ﾂ', 'ｵ', 'ﾘ', 'ﾎ',
-    'ｱ', '3', '7', 'A', 'F', '░', '▒', '┊',
+    '0', '1', 'ｱ', 'ﾊ', 'ﾐ', 'ﾋ', 'ｰ', 'ｳ', 'ｼ', 'ﾅ', 'ﾓ', 'ﾆ', 'ｻ', 'ﾜ', 'ﾂ', 'ｵ', 'ﾘ', 'ﾎ', 'ｱ',
+    '3', '7', 'A', 'F', '░', '▒', '┊',
 ];
 
 const STARS: &[char] = &['·', '∙', '˙', '˚', '✶', '✦', '⠂', '⠄', '⠁', ' '];
@@ -228,7 +230,8 @@ impl Landing {
                     self.action = Some(LandingAction::Run { path, args });
                 } else {
                     self.flash = Some(Instant::now());
-                    self.notice = Some((Instant::now(), format!("{} does not exist", path.display())));
+                    self.notice =
+                        Some((Instant::now(), format!("{} does not exist", path.display())));
                 }
             }
         }
@@ -599,7 +602,14 @@ fn draw_rain(f: &mut Frame, area: Rect, app: &Landing, lane: u16) {
     f.render_widget(Paragraph::new(lines), area);
 }
 
-fn rain_cell(app: &Landing, lane: u16, x: u16, y: u16, height: u16, t: f32) -> (char, ratatui::style::Color) {
+fn rain_cell(
+    app: &Landing,
+    lane: u16,
+    x: u16,
+    y: u16,
+    height: u16,
+    t: f32,
+) -> (char, ratatui::style::Color) {
     let seed = (lane as u64)
         .wrapping_mul(0x9E37)
         .wrapping_add(x as u64)
@@ -627,7 +637,10 @@ fn rain_cell(app: &Landing, lane: u16, x: u16, y: u16, height: u16, t: f32) -> (
         (ch, color)
     } else if seed % 23 == 0 {
         let star = STARS[((seed >> 3) as usize + (t * 2.0) as usize) % (STARS.len() - 1)];
-        (star, lerp_color(DIM, LAVENDER, 0.25 + 0.2 * (t * 1.7 + x as f32).sin()))
+        (
+            star,
+            lerp_color(DIM, LAVENDER, 0.25 + 0.2 * (t * 1.7 + x as f32).sin()),
+        )
     } else {
         (' ', BG)
     }
@@ -665,17 +678,41 @@ fn draw_overlay(f: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from(""),
         Line::from(Span::styled("  this screen", bold(YELLOW))),
-        Line::from(Span::styled("  type a path + enter     run in the viewer", fg(TEXT))),
-        Line::from(Span::styled("  d                       clean vs decoy demo", fg(TEXT))),
-        Line::from(Span::styled("  ?                       this overlay", fg(TEXT))),
+        Line::from(Span::styled(
+            "  type a path + enter     run in the viewer",
+            fg(TEXT),
+        )),
+        Line::from(Span::styled(
+            "  d                       clean vs decoy demo",
+            fg(TEXT),
+        )),
+        Line::from(Span::styled(
+            "  ?                       this overlay",
+            fg(TEXT),
+        )),
         Line::from(Span::styled("  q  esc                  quit", fg(TEXT))),
         Line::from(""),
         Line::from(Span::styled("  CLI", bold(PEACH))),
-        Line::from(Span::styled("  sysdag <file> [args]    run, then the graph", fg(MUTED))),
-        Line::from(Span::styled("  sysdag train <file>     write a baseline", fg(MUTED))),
-        Line::from(Span::styled("  sysdag monitor <file>   score against it", fg(MUTED))),
-        Line::from(Span::styled("  sysdag demo / doctor    end-to-end / host check", fg(MUTED))),
-        Line::from(Span::styled("  --plain  --json         skip the app", fg(MUTED))),
+        Line::from(Span::styled(
+            "  sysdag <file> [args]    run, then the graph",
+            fg(MUTED),
+        )),
+        Line::from(Span::styled(
+            "  sysdag train <file>     write a baseline",
+            fg(MUTED),
+        )),
+        Line::from(Span::styled(
+            "  sysdag monitor <file>   score against it",
+            fg(MUTED),
+        )),
+        Line::from(Span::styled(
+            "  sysdag demo / doctor    end-to-end / host check",
+            fg(MUTED),
+        )),
+        Line::from(Span::styled(
+            "  --plain  --json         skip the app",
+            fg(MUTED),
+        )),
         Line::from(""),
         Line::from(Span::styled("  esc closes", fg(DIM))),
     ];
@@ -754,7 +791,10 @@ fn logo_band(stage: Rect) -> Rect {
 }
 
 fn spark_band(stage: Rect) -> Rect {
-    let y = stage.y.saturating_add(LOGO.len() as u16 + 3).min(stage.y.saturating_add(stage.height.saturating_sub(1)));
+    let y = stage
+        .y
+        .saturating_add(LOGO.len() as u16 + 3)
+        .min(stage.y.saturating_add(stage.height.saturating_sub(1)));
     Rect {
         x: stage.x,
         y,
