@@ -50,10 +50,7 @@ pub fn run(session: Session) -> Result<i32> {
     Ok(app.exit_code())
 }
 
-fn event_loop(
-    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    app: &mut App,
-) -> Result<()> {
+fn event_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mut App) -> Result<()> {
     let mut last = Instant::now();
     while !app.quit {
         app.poll_analysis();
@@ -100,6 +97,9 @@ fn on_key(app: &mut App, key: KeyEvent) {
                 View::Inspect => View::Events,
             };
             app.set_view(prev);
+        }
+        KeyCode::Char('f') => {
+            app.filter = app.filter.next();
         }
         KeyCode::Char(c) if View::from_digit(c).is_some() => {
             app.set_view(View::from_digit(c).unwrap());

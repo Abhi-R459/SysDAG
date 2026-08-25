@@ -1,85 +1,141 @@
 # SysCall-DAG
 
-Rust CLI that turns a Linux process into **typed syscall dependency DAGs**, fingerprints each window with **directed Weisfeiler–Lehman refinement**, and scores it against a clean baseline.
+SysCall-DAG builds typed dependency DAGs from a process's Linux system calls,
+fingerprints each window with directed Weisfeiler–Lehman refinement, and scores
+it against a clean baseline. It is a research prototype: use `strace` as the
+reference capture path, and treat eBPF performance claims as unverified until
+the included measurement workflow has been run on a privileged Linux host.
 
-```text
-sysdag
-```
+## Highlights
 
-opens the landing app on a TTY: type a path and press enter, `d` for the demo, `?` for commands, `q` to quit. `--plain` / `--json` (or a non-TTY stdout) still print the command list.
+- Typed syscall graphs with descriptor lifecycles, process relationships,
+  vectored-I/O buffer flow, and Unix `SCM_RIGHTS` descriptor transfer.
+- `NORMAL`, `REVIEW`, and `ANOMALOUS` decisions with score breakdowns and
+  source-window evidence.
+- Capture-quality accounting: parser/kernel loss and bounded-stream eviction
+  flow into the degraded-capture safeguard rather than being silently ignored.
+- Reproducible dataset import, calibration, evaluation, measurement, ablation,
+  and a 1/2/3-gram sequence reference.
+- Interactive TUI plus plain-text and JSON command-line modes.
+- Incremental live monitoring from JSONL, strace, FIFO/file, TCP, or an eBPF
+  relay stream.
 
-```text
-sysdag <file>
-```
+## Requirements
 
-`<file>` may be:
+- Rust stable.
+- Docker Desktop / Docker for running programs inside the disposable Linux
+  guest. Recorded traces do not need Docker.
+- Linux or WSL2 for live `strace` and eBPF collection.
 
-- a **C / Python / shell** program — compiled or interpreted inside a disposable Linux micro-VM, then traced
-- a Linux **ELF**
-- a recorded **strace** log (or a directory of `strace -ff` files)
+Install and validate:
 
-First run **trains** a baseline. Later runs **monitor** the same file against that baseline.
-
-## What it does
-
-1. Capture completed syscalls (`strace` in a 256 MiB loopback-only Alpine guest).
-2. Track file-descriptor generations, buffer flow, and process edges.
-3. Slice a sliding window (default W=100, overlap=20) into a DAG.
-4. Encode neighborhoods with 3-round directed, edge-typed WL + SHA-256.
-5. Decide `NORMAL` / `REVIEW` / `ANOMALOUS` with exact fingerprint lookup, weighted-Jaccard similarity, size deviation, and risk motifs.
-
-An unseen hash is evidence, not a verdict. Every alert points back to window node IDs and source sequence numbers.
-
-## Install
-
-```bash
+```sh
 cargo install --path .
-```
-
-On macOS, **Docker Desktop** is required to execute programs (they run in a Linux guest). Trace files can be analyzed without Docker.
-
-```bash
+cargo test
 sysdag doctor
 ```
 
-## Usage
+## Quick start
 
-Bare `sysdag` opens the landing. After a run, SysCall-DAG opens a viewer: a score meter, the syscall DAG, and why it decided. Use `--plain` for a text report, `--help` for the command list.
+Open the TUI on a terminal:
 
-```bash
-# first run of a program: train (then the TUI)
-sysdag examples/workload.c clean
-
-# later run: monitor
-sysdag examples/workload.c attack
-
-# text only
-sysdag --plain examples/workload.c attack
-sysdag --help
-
-# explicit modes
-sysdag train tests/fixtures/clean.strace
-sysdag monitor tests/fixtures/attack.strace
-
-# end-to-end clean-then-exfil demonstration (needs Docker)
-sysdag demo
-
-# Graphviz
-sysdag viz .sysdag/runs/<id>/graphs/w0000/graph.json
+```sh
+sysdag
 ```
 
-Artifacts land in `.sysdag/` (baselines, traces, JSON graphs, DOT).
+Enter a program or trace path and press Enter. The first run trains a baseline;
+subsequent runs monitor against that baseline. Use `--plain` for a text-only
+report or `--json` for machine-readable output.
 
-## Safety
+```sh
+# Train and monitor recorded traces
+sysdag --plain --workdir .sysdag --id example train tests/fixtures/clean.strace
+sysdag --plain --workdir .sysdag --id example monitor tests/fixtures/attack.strace
 
-The guest has **no external network** (`--network=none`). The bundled demo reads only a **harmless decoy** created for the experiment, never real credentials.
+# Run the bundled clean-then-exfiltration demonstration (requires Docker)
+sysdag demo
 
-## Layout
+# Inspect a graph or its score breakdown
+sysdag viz .sysdag/runs/<run-id>/graphs/w0000/graph.json
+sysdag explain --baseline .sysdag/baselines/example.json \
+  --graph .sysdag/runs/<run-id>/graphs/w0000/graph.json
+```
+
+Artifacts are written below `.sysdag/`: baselines, manifests, event streams,
+graphs, decisions, and private path maps when redaction is enabled.
+
+## Evaluation workflow
+
+Import a corpus with run metadata, calibrate only from clean training runs, then
+evaluate the frozen baseline on the test partition:
+
+```sh
+sysdag dataset import samples/corpus --id sample-corpus
+sysdag calibrate --dataset sample-corpus
+sysdag evaluate --dataset sample-corpus \
+  --baseline .sysdag/baselines/dataset-sample-corpus.json
+sysdag measure --dataset sample-corpus \
+  --baseline .sysdag/baselines/dataset-sample-corpus.json
+sysdag evaluate-ngram --dataset sample-corpus
+```
+
+`ablate --dataset <id> --grid <grid.toml>` runs configured representation and
+window comparisons. See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)
+for the claim gates and completed work.
+
+## Live monitoring
+
+`monitor-live` scores a completed window as soon as enough events arrive. It
+accepts JSONL events or stateful strace lines from a file, FIFO, or TCP source:
+
+```sh
+sysdag monitor-live --format strace --input /tmp/sysdag.strace \
+  --baseline .sysdag/baselines/example.json
+
+sysdag monitor-live --format jsonl --input tcp://127.0.0.1:9000 \
+  --baseline .sysdag/baselines/example.json
+```
+
+## Native eBPF collection (Linux/WSL2)
+
+The repository includes a raw-syscall eBPF program and Aya loader. Build the
+object, collect its ring-buffer relay, then monitor or evaluate its JSONL:
+
+```sh
+clang -O2 -g -target bpf -D__TARGET_ARCH_x86 \
+  -c ebpf/sysdag.bpf.c -o ebpf/sysdag.bpf.o
+cargo build --release
+
+sudo target/release/sysdag collect-ebpf --object ebpf/sysdag.bpf.o \
+  --output /tmp/sysdag.ebpf.jsonl --duration-secs 30
+target/release/sysdag monitor-ebpf --input /tmp/sysdag.ebpf.jsonl \
+  --baseline .sysdag/baselines/example.json
+```
+
+Native attachment requires a BPF-capable kernel, Clang BPF toolchain, and
+`CAP_BPF` plus `CAP_PERFMON` (normally `sudo`). Run the overhead comparison
+before making low-overhead claims:
+
+```sh
+SYSDAG_BIN=target/release/sysdag scripts/measure_capture_overhead.sh \
+  ebpf/sysdag.bpf.o -- /path/to/workload arg1
+```
+
+Detailed instructions: [docs/EBPF_BUILD_AND_MEASURE.md](docs/EBPF_BUILD_AND_MEASURE.md)
+and [docs/EBPF_RELAY_PROTOCOL.md](docs/EBPF_RELAY_PROTOCOL.md).
+
+## Safety and privacy
+
+The program-execution path runs in a loopback-only guest. Bundled attack samples
+read harmless decoys only. Configure path redaction before exporting artifacts;
+the local token-to-path map is kept separate from exported events and graphs.
+
+## Project map
 
 ```text
-src/           CLI, parser, DAG, WL, detector, micro-VM runner
-examples/      demo workload (C)
-guest/         Alpine Dockerfile
-tests/         golden traces and pipeline tests
-configs/       default window / WL / score weights
+src/             parser, graph builder, detector, experiments, TUI, streaming
+ebpf/            raw-syscall BPF program
+samples/         reproducible clean/attack corpus and demo programs
+tests/           unit and acceptance coverage
+docs/            implementation plan, architecture, relay, and measurement docs
 ```

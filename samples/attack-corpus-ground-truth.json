@@ -1,0 +1,8 @@
+{
+  "decoy_traversal": "attack",
+  "read_socket_exfiltration": "attack",
+  "shell_spawn": "attack",
+  "dummy_call_insertion": "attack",
+  "benign_update_drift": "clean",
+  "window_boundary_edge": "attack"
+}

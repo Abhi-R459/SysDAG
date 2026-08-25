@@ -83,6 +83,30 @@ fn train_then_monitor_flags_exfiltration() {
 }
 
 #[test]
+fn incremental_monitor_emits_a_closed_window() {
+    let mut cfg = cfg();
+    cfg.window.size = 4;
+    cfg.window.overlap = 1;
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-stream");
+    let _ = std::fs::remove_dir_all(&root);
+    let train = analyze_path(
+        &fixture("clean.strace"),
+        Mode::Train,
+        &cfg,
+        &root,
+        &root.join("baselines"),
+        &[],
+        false,
+        Some("stream"),
+    )
+    .unwrap();
+    let baseline = sysdag::detector::load_baseline(train.baseline_path.as_ref().unwrap()).unwrap();
+    let (events, _) = sysdag::tracer::parse_strace_path(&fixture("attack.strace"), &cfg).unwrap();
+    let decisions = sysdag::pipeline::monitor_event_stream(events, &cfg, &baseline, "live", 32);
+    assert!(!decisions.is_empty());
+}
+
+#[test]
 fn graphs_are_dags() {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-dag");
     let _ = std::fs::remove_dir_all(&tmp);
