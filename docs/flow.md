@@ -43,7 +43,7 @@ This document explains the end-to-end runtime and offline flow implemented by Sy
 - Reports and decisions are written into the run directory; print_report formats JSON/plain output.
 
 CLI entrypoints (src/main.rs)
-- sysdag run/train/monitor, sysdag demo, sysdag doctor, sysdag viz
+- sysdag run/train/monitor, sysdag doctor, sysdag viz
 - TUI (ratatui + crossterm) used for interactive runs; plain/json modes skip TUI.
 
 Where artifacts land

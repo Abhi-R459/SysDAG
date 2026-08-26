@@ -1,15 +1,11 @@
 //! Phase 1.4 acceptance: exported artifacts contain no plaintext paths.
 
+mod fixtures;
+use fixtures::{synthetic_trace, CLEAN_TRACE};
 use std::path::PathBuf;
 
 use sysdag::config::Config;
 use sysdag::pipeline::{analyze_path, Mode};
-
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
 
 #[test]
 fn redaction_keeps_plaintext_out_of_exported_artifacts() {
@@ -24,7 +20,7 @@ fn redaction_keeps_plaintext_out_of_exported_artifacts() {
     cfg.privacy.persist_raw_lines = false;
 
     let report = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&root.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &root,

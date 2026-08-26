@@ -1,3 +1,5 @@
+mod fixtures;
+use fixtures::{synthetic_trace, CLEAN_TRACE};
 use std::path::PathBuf;
 
 use sysdag::config::Config;
@@ -11,12 +13,6 @@ fn cfg() -> Config {
     c
 }
 
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
-
 #[test]
 fn run_manifest_roundtrip_and_tamper() {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-manifest");
@@ -26,7 +22,7 @@ fn run_manifest_roundtrip_and_tamper() {
     let baselines = tmp.join("baselines");
 
     let train = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&tmp.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &tmp,

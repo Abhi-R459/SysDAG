@@ -13,7 +13,7 @@ Suggested next steps for maintainers
 Repository layout reminder
 - src/ — implementation (see architecture.md)
 - configs/ — default configuration
-- tests/ — golden traces and pipeline tests
-- examples/ — demo workload
+- tests/ — synthetic runtime fixtures and pipeline tests
+- examples/ — reserved for local, user-supplied targets
 
 If more documentation is needed (API references, dev setup, CI), specify and a follow-up commit will be added.

@@ -48,12 +48,9 @@ subsequent runs monitor against that baseline. Use `--plain` for a text-only
 report or `--json` for machine-readable output.
 
 ```sh
-# Train and monitor recorded traces
-sysdag --plain --workdir .sysdag --id example train tests/fixtures/clean.strace
-sysdag --plain --workdir .sysdag --id example monitor tests/fixtures/attack.strace
-
-# Run the bundled clean-then-exfiltration demonstration (requires Docker)
-sysdag demo
+# Train and monitor your own recorded traces
+sysdag --plain --workdir .sysdag --id example train /path/to/clean.strace
+sysdag --plain --workdir .sysdag --id example monitor /path/to/test.strace
 
 # Inspect a graph or its score breakdown
 sysdag viz .sysdag/runs/<run-id>/graphs/w0000/graph.json
@@ -66,17 +63,17 @@ graphs, decisions, and private path maps when redaction is enabled.
 
 ## Evaluation workflow
 
-Import a corpus with run metadata, calibrate only from clean training runs, then
-evaluate the frozen baseline on the test partition:
+Import a corpus of traces you provide, calibrate only from clean training runs,
+then evaluate the frozen baseline on the test partition:
 
 ```sh
-sysdag dataset import samples/corpus --id sample-corpus
-sysdag calibrate --dataset sample-corpus
-sysdag evaluate --dataset sample-corpus \
-  --baseline .sysdag/baselines/dataset-sample-corpus.json
-sysdag measure --dataset sample-corpus \
-  --baseline .sysdag/baselines/dataset-sample-corpus.json
-sysdag evaluate-ngram --dataset sample-corpus
+sysdag dataset import /path/to/corpus --id my-corpus
+sysdag calibrate --dataset my-corpus
+sysdag evaluate --dataset my-corpus \
+  --baseline .sysdag/baselines/dataset-my-corpus.json
+sysdag measure --dataset my-corpus \
+  --baseline .sysdag/baselines/dataset-my-corpus.json
+sysdag evaluate-ngram --dataset my-corpus
 ```
 
 `ablate --dataset <id> --grid <grid.toml>` runs configured representation and
@@ -126,8 +123,8 @@ and [docs/EBPF_RELAY_PROTOCOL.md](docs/EBPF_RELAY_PROTOCOL.md).
 
 ## Safety and privacy
 
-The program-execution path runs in a loopback-only guest. Bundled attack samples
-read harmless decoys only. Configure path redaction before exporting artifacts;
+The program-execution path runs in a loopback-only guest. No training data or
+attack samples are bundled. Configure path redaction before exporting artifacts;
 the local token-to-path map is kept separate from exported events and graphs.
 
 ## Project map
@@ -135,7 +132,6 @@ the local token-to-path map is kept separate from exported events and graphs.
 ```text
 src/             parser, graph builder, detector, experiments, TUI, streaming
 ebpf/            raw-syscall BPF program
-samples/         reproducible clean/attack corpus and demo programs
-tests/           unit and acceptance coverage
+tests/           unit and acceptance coverage using synthetic traces
 docs/            implementation plan, architecture, relay, and measurement docs
 ```

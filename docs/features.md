@@ -16,7 +16,7 @@ Running the tool
 - Train baseline from a trace or program: sysdag train <file>
 - Monitor: sysdag monitor <file>
 - One-shot (auto train/monitor): sysdag run <file>
-- Demo: sysdag demo (stages demo world in workdir/demo and shows clean vs attack runs).
+- Bring-your-own traces and targets; no bundled training data or attack samples.
 - Doctor checks prerequisites (Docker image etc): sysdag doctor
 - Export DOT: sysdag viz <path/to/graph.json>
 - Explain score breakdown: sysdag explain <baseline.json> <path/to/graph.json>  # prints alpha/beta/gamma/delta contributions
@@ -31,7 +31,7 @@ Configuration highlights (configs/default.toml)
 Extending or debugging
 - To change WL or add new motifs, update features.rs and detector::risk_and_evidence.
 - To adapt parsing for a tracer variant, modify tracer.rs parse_completed and interpret_args.
-- Tests: tests/pipeline.rs exercises pipeline against fixtures/tests/fixtures/*.strace.
+- Tests: tests/pipeline.rs exercises pipeline against runtime synthetic strace text.
 
 Artifacts & inspection
 - Look under .sysdag/runs/<id>/graphs/wXXXX for graph.json and graph.dot.
@@ -39,7 +39,7 @@ Artifacts & inspection
 - Decisions: runs/<id>/decisions.json (monitor mode)
 
 Security & safety
-- The sandbox guest uses network=none by default. Demo data is harmless, and the tool emphasizes safe defaults.
+- The sandbox guest uses network=none by default, and the tool emphasizes safe defaults.
 
 Where to contribute
 - Small changes: add unit tests in the module's tests sections or in tests/*.rs.

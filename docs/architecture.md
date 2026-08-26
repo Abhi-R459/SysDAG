@@ -13,7 +13,7 @@ Module map (src/)
 - graph: Stateful resource model and windowed DAG builder (build_windows, validate_graph).
 - features: Directed, edge-typed Weisfeiler–Lehman refinement and fingerprint / feature histogram creation (encode, weighted_jaccard).
 - detector: Baseline training, prototypes, scoring, and decision records (train_baseline, score, BaselineManifest, DecisionRecord).
-- pipeline: High-level orchestration (ingest, encode_all, analyze_path, run_demo).
+- pipeline: High-level orchestration (ingest, encode_all, analyze_path).
 - sandbox: Guest micro-VM staging/execution for programs; file staging and trace capture helpers.
 - visualizer: Graph JSON/DOT writers and human-friendly decision formatting.
 - tui: Terminal UI (landing and session) used for interactive runs.
@@ -39,7 +39,7 @@ Configuration & reproducibility
 
 Testing & examples
 - tests/ contains golden strace fixtures and a pipeline unit test.
-- examples/workload.c and demo orchestration in pipeline::run_demo exercise the full stack.
+- Runtime synthetic traces in integration tests exercise the full pipeline without bundled training data.
 
 Where to dig deeper
 - graph.rs: FD/buffer state machine and emit_window logic (complex but central).

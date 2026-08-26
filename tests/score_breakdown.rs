@@ -1,3 +1,5 @@
+mod fixtures;
+use fixtures::{synthetic_trace, ATTACK_TRACE, CLEAN_TRACE};
 use std::path::PathBuf;
 use sysdag::config::Config;
 use sysdag::detector::{load_baseline, score_breakdown};
@@ -11,12 +13,6 @@ fn cfg() -> Config {
     c
 }
 
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
-
 #[test]
 fn breakdown_sum_matches_score() {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-breakdown");
@@ -26,7 +22,7 @@ fn breakdown_sum_matches_score() {
     let baselines = tmp.join("baselines");
 
     let train = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&tmp.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &tmp,
@@ -40,7 +36,7 @@ fn breakdown_sum_matches_score() {
     let baseline = load_baseline(&bp).unwrap();
 
     let mon = analyze_path(
-        &fixture("attack.strace"),
+        &synthetic_trace(&tmp.join("input"), "attack.strace", ATTACK_TRACE),
         Mode::Monitor,
         &cfg,
         &tmp,

@@ -48,25 +48,22 @@ const STARS: &[char] = &['·', '∙', '˙', '˚', '✶', '✦', '⠂', '⠄', '�
 #[derive(Debug, Clone)]
 pub enum LandingAction {
     Quit,
-    Demo,
     Run { path: PathBuf, args: Vec<String> },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Item {
     Run,
-    Demo,
     Commands,
     Quit,
 }
 
 impl Item {
-    const ALL: [Item; 4] = [Item::Run, Item::Demo, Item::Commands, Item::Quit];
+    const ALL: [Item; 3] = [Item::Run, Item::Commands, Item::Quit];
 
     fn label(self) -> &'static str {
         match self {
             Item::Run => "run this path",
-            Item::Demo => "demo",
             Item::Commands => "commands",
             Item::Quit => "quit",
         }
@@ -75,7 +72,6 @@ impl Item {
     fn hint(self) -> &'static str {
         match self {
             Item::Run => "type a file, then enter",
-            Item::Demo => "train clean, then score a decoy",
             Item::Commands => "overlay  ·  also ?",
             Item::Quit => "leave the app",
         }
@@ -84,7 +80,6 @@ impl Item {
     fn key(self) -> &'static str {
         match self {
             Item::Run => "↵",
-            Item::Demo => "d",
             Item::Commands => "?",
             Item::Quit => "q",
         }
@@ -93,9 +88,8 @@ impl Item {
     fn index(self) -> usize {
         match self {
             Item::Run => 0,
-            Item::Demo => 1,
-            Item::Commands => 2,
-            Item::Quit => 3,
+            Item::Commands => 1,
+            Item::Quit => 2,
         }
     }
 
@@ -213,7 +207,6 @@ impl Landing {
     fn activate(&mut self) {
         match self.item {
             Item::Run => self.submit_path(),
-            Item::Demo => self.action = Some(LandingAction::Demo),
             Item::Commands => self.overlay = !self.overlay,
             Item::Quit => self.action = Some(LandingAction::Quit),
         }
@@ -330,9 +323,6 @@ fn on_key(app: &mut Landing, key: KeyEvent) {
         KeyCode::Char('?') => app.overlay = true,
         KeyCode::Char(c) if !app.typing() && matches!(c, 'j') => app.move_sel(1),
         KeyCode::Char(c) if !app.typing() && matches!(c, 'k') => app.move_sel(-1),
-        KeyCode::Char(c) if !app.typing() && matches!(c, 'd') => {
-            app.action = Some(LandingAction::Demo);
-        }
         KeyCode::Char(c) if !app.typing() && matches!(c, 'q') => {
             app.action = Some(LandingAction::Quit);
         }
@@ -653,7 +643,7 @@ fn draw_footer(f: &mut Frame, area: Rect, app: &Landing) {
     } else if app.typing() {
         "  enter run   esc clear   ctrl-u wipe   ? commands"
     } else {
-        "  type a path + enter   d demo   ? commands   q quit"
+        "  type a path + enter   ? commands   q quit"
     };
     f.render_widget(Paragraph::new(Span::styled(hint, fg(DIM))), area);
 }
@@ -683,10 +673,6 @@ fn draw_overlay(f: &mut Frame, area: Rect) {
             fg(TEXT),
         )),
         Line::from(Span::styled(
-            "  d                       clean vs decoy demo",
-            fg(TEXT),
-        )),
-        Line::from(Span::styled(
             "  ?                       this overlay",
             fg(TEXT),
         )),
@@ -706,7 +692,7 @@ fn draw_overlay(f: &mut Frame, area: Rect) {
             fg(MUTED),
         )),
         Line::from(Span::styled(
-            "  sysdag demo / doctor    end-to-end / host check",
+            "  sysdag doctor           host check",
             fg(MUTED),
         )),
         Line::from(Span::styled(
@@ -825,8 +811,8 @@ mod tests {
 
     #[test]
     fn splits_path_and_args() {
-        let (path, args) = parse_run_line("examples/workload.c clean extra").unwrap();
-        assert_eq!(path, PathBuf::from("examples/workload.c"));
+        let (path, args) = parse_run_line("/tmp/target.sh clean extra").unwrap();
+        assert_eq!(path, PathBuf::from("/tmp/target.sh"));
         assert_eq!(args, vec!["clean", "extra"]);
     }
 
