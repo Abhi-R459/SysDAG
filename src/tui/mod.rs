@@ -13,6 +13,8 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 
 mod app;
+#[cfg(target_os = "linux")]
+mod browser;
 mod draw;
 mod landing;
 mod motion;
@@ -22,6 +24,8 @@ pub use app::Session;
 pub use landing::{run_landing, LandingAction};
 
 use app::{App, View};
+#[cfg(target_os = "linux")]
+use browser::open_graph_in_browser;
 use draw::draw;
 
 pub fn should_open(plain: bool, json: bool) -> bool {
@@ -126,6 +130,15 @@ fn on_key(app: &mut App, key: KeyEvent) {
         KeyCode::Home => app.scroll = 0,
         KeyCode::Char('[') => app.move_window(-1),
         KeyCode::Char(']') => app.move_window(1),
+        #[cfg(target_os = "linux")]
+        KeyCode::Char('v') => {
+            if let Some(graph) = app.graph().cloned() {
+                app.notice = Some(match open_graph_in_browser(&graph) {
+                    Ok(path) => (Instant::now(), format!("opened {}", path.display())),
+                    Err(err) => (Instant::now(), format!("browser failed: {err:#}")),
+                });
+            }
+        }
         _ => {}
     }
 }

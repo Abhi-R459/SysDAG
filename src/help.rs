@@ -34,5 +34,6 @@ In the viewer
   tab  1-4   overview / graph / events / inspect
   j k        move
   [ ]        window
+  v          open current graph in browser
   q          quit
 ";

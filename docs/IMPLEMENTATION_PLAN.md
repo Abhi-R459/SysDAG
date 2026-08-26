@@ -182,7 +182,7 @@ Status: `[x]` done 2026-08-24 — `WindowBuilder` incrementally emits closed win
 
 Goal: the intended production capture layer.
 
-Status: `[ ]` implementation complete; runtime evidence pending 2026-08-24 — `ebpf/sysdag.bpf.c` correlates raw syscall enter/exit state in a bounded per-TID map and submits completed records through a ring buffer. The Linux aya loader (`collect-ebpf`) attaches both tracepoints and writes typed relay JSONL; `monitor-ebpf`, dataset evaluation, and the three-way overhead harness consume that output unchanged, with kernel map drops reaching `DEGRADED_CAPTURE`. Windows and WSL2 builds pass, but this session lacks Clang/BPF tooling and the privileges needed to compile/attach the object, so no immutable eBPF overhead/evaluation result exists and the low-overhead claim remains disabled.
+Status: `[ ]` implementation complete; runtime evidence pending 2026-08-24 — `ebpf/sysdag.bpf.c` correlates raw syscall enter/exit state in a bounded per-TID map and submits completed records through a ring buffer. The Linux aya loader (`collect-ebpf`) attaches both tracepoints and writes typed relay JSONL; `monitor-ebpf`, dataset evaluation, and the three-way overhead harness consume that output unchanged, with kernel map drops reaching `DEGRADED_CAPTURE`. This session lacks Clang/BPF tooling and the privileges needed to compile/attach the object, so no immutable eBPF overhead/evaluation result exists and the low-overhead claim remains disabled.
 - Rust eBPF loader (aya): tracepoints/raw tracepoints for the syscall classes already
   tracked; per-thread bounded state maps for entry/exit correlation.
 - Ring-buffer delivery feeding the Phase 6 `WindowBuilder` unchanged.

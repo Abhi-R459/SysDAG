@@ -236,7 +236,15 @@ fn draw_workspace(f: &mut Frame, area: Rect, app: &App) {
 fn draw_footer(f: &mut Frame, area: Rect, app: &App) {
     f.render_widget(Block::default().style(Style::default().bg(SURFACE)), area);
     let view = app.view.title();
-    let hint = format!("  {view}   tab views   1-4 jump   j/k move   [ ] window   q quit");
+    let hint = if app
+        .notice
+        .as_ref()
+        .is_some_and(|(opened, _)| opened.elapsed().as_secs() < 3)
+    {
+        format!("  {}", app.notice.as_ref().unwrap().1)
+    } else {
+        format!("  {view}   tab views   1-4 jump   j/k move   [ ] window   v browser   q quit")
+    };
     f.render_widget(Paragraph::new(Span::styled(hint, fg(DIM))), area);
 }
 
