@@ -1156,39 +1156,6 @@
       .on("end",fitView);
   }
 
-  // GUARANTEED suspicious styling via raw DOM manipulation.
-  // This runs as a safety-net pass after D3 rendering to ensure
-  // suspicious nodes always get the correct visual treatment.
-  function applySuspiciousStyles() {
-    requestAnimationFrame(() => {
-      nodeLayer.selectAll(".node").each(function(node) {
-        const g = this;
-        const shape = g.querySelector(".node-shape");
-        const glow = g.querySelector(".node-glow");
-        const dot = g.querySelector(".node-dot");
-        const markers = g.querySelectorAll(".risk-marker");
-        const primary = g.querySelector(".primary-text");
-        const sub = g.querySelector(".subtext");
-        const susp = isSuspiciousNode(node);
-        if (susp) {
-          if (shape) { shape.style.stroke = "#C95757"; shape.style.strokeWidth = "3"; shape.style.fill = "#1a0c0e"; }
-          if (glow) { glow.style.fill = "#C95757"; glow.style.opacity = "0.4"; glow.style.filter = "drop-shadow(0 0 12px rgba(201,87,87,.5))"; }
-          if (dot) { dot.style.fill = "#C95757"; }
-          markers.forEach(m => { m.style.display = "block"; });
-          if (primary) { primary.style.fill = "#f0b9b9"; primary.style.stroke = "#1a0508"; }
-          if (sub) { sub.style.fill = "#d4918f"; }
-        } else {
-          if (shape) { shape.style.stroke = ""; shape.style.strokeWidth = ""; shape.style.fill = ""; }
-          if (glow) { glow.style.fill = ""; glow.style.opacity = ""; glow.style.filter = ""; }
-          if (dot) { dot.style.fill = ""; }
-          markers.forEach(m => { m.style.display = ""; });
-          if (primary) { primary.style.fill = ""; primary.style.stroke = ""; }
-          if (sub) { sub.style.fill = ""; }
-        }
-      });
-    });
-  }
-
   function redrawGraph() {
     edgeLayer.selectAll(".edge")
       .data(edges,d => edgeKey(d))
@@ -1273,10 +1240,11 @@
           .style("fill",suspicious ? "#d4918f" : null)
           .text(secondaryLabel(node));
       })
-      .call(bindNodeEvents);    applyDrag();
+      .call(bindNodeEvents);
+
+    applyDrag();
     updatePositions();
     applyVisibility();
-    applySuspiciousStyles();
   }
 
   function bindNodeEvents(selection) {
@@ -1669,7 +1637,6 @@
         d3.select(this).select(".search-ring")
           .attr("opacity",matchSet.has(node.id) ? ".9" : "0");
       });
-    applySuspiciousStyles();
   }
 
   function updateSearch() {
