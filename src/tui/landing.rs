@@ -326,11 +326,9 @@ fn on_key(app: &mut Landing, key: KeyEvent) {
         KeyCode::Char(c) if !app.typing() && matches!(c, 'q') => {
             app.action = Some(LandingAction::Quit);
         }
-        KeyCode::Char(c) if !ctrl => {
-            if !c.is_control() {
-                app.input.push(c);
-                app.select(Item::Run);
-            }
+        KeyCode::Char(c) if !ctrl && !c.is_control() => {
+            app.input.push(c);
+            app.select(Item::Run);
         }
         _ => {}
     }
@@ -625,7 +623,7 @@ fn rain_cell(
             hsl(210.0, 0.25, 0.16 + fade * 0.18)
         };
         (ch, color)
-    } else if seed % 23 == 0 {
+    } else if seed.is_multiple_of(23) {
         let star = STARS[((seed >> 3) as usize + (t * 2.0) as usize) % (STARS.len() - 1)];
         (
             star,
@@ -649,8 +647,8 @@ fn draw_footer(f: &mut Frame, area: Rect, app: &Landing) {
 }
 
 fn draw_overlay(f: &mut Frame, area: Rect) {
-    let w = area.width.min(64).max(36);
-    let h = area.height.min(20).max(12);
+    let w = area.width.clamp(36, 64);
+    let h = area.height.clamp(12, 20);
     let x = area.x + (area.width.saturating_sub(w)) / 2;
     let y = area.y + (area.height.saturating_sub(h)) / 2;
     let box_area = Rect {

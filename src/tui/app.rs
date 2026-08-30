@@ -101,7 +101,7 @@ impl Session {
 
 pub enum Analysis {
     Pending,
-    Ready(RunReport),
+    Ready(Box<RunReport>),
     Failed(String),
 }
 
@@ -254,7 +254,7 @@ impl App {
         self.rows_started = Instant::now();
         self.focus.snap(1.0);
         self.focus.set(0.0);
-        self.analysis = Analysis::Ready(report);
+        self.analysis = Analysis::Ready(Box::new(report));
     }
 
     pub fn tick(&mut self, dt: Duration) {

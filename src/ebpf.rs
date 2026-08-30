@@ -15,6 +15,7 @@ use crate::event::TraceEvent;
 /// DEGRADED_CAPTURE decision rule instead of silently biasing a score.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum EbpfEnvelope {
     Event { event: TraceEvent },
     Lost { count: u64 },
@@ -50,7 +51,9 @@ pub fn linux_ebpf_available() -> Result<()> {
         return Ok(());
     }
     #[cfg(not(target_os = "linux"))]
-    bail!("the eBPF collector requires Linux (use WSL2 or a Linux host)")
+    {
+        bail!("eBPF is only supported on Linux");
+    }
 }
 
 #[cfg(test)]

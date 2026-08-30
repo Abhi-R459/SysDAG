@@ -101,6 +101,7 @@ pub struct TraceEvent {
 }
 
 impl TraceEvent {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         process: ProcessRef,
         seq: u64,

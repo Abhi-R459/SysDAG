@@ -98,6 +98,13 @@ fn write_private_path_map(
     }
     Ok(())
 }
+type IngestResult = (
+    Vec<TraceEvent>,
+    String,
+    PathBuf,
+    GraphQuality,
+    Option<ParseStats>,
+);
 
 fn ingest(
     path: &Path,
@@ -106,13 +113,7 @@ fn ingest(
     run_id: &str,
     target_args: &[String],
     app_root_override: Option<&str>,
-) -> Result<(
-    Vec<TraceEvent>,
-    String,
-    PathBuf,
-    GraphQuality,
-    Option<ParseStats>,
-)> {
+) -> Result<IngestResult> {
     let mut cfg = cfg.clone();
     if let Some(root) = app_root_override {
         cfg.labels.app_root = root.to_string();

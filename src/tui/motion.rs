@@ -98,7 +98,7 @@ pub fn hsl(h: f32, s: f32, l: f32) -> Color {
     let a = s * l.min(1.0 - l);
     let f = |n: f32| {
         let k = (n + h * 12.0) % 12.0;
-        l - a * (k - 3.0).min(9.0 - k).min(1.0).max(-1.0)
+        l - a * (k - 3.0).min(9.0 - k).clamp(-1.0, 1.0)
     };
     Color::Rgb(
         (f(0.0) * 255.0).round() as u8,
@@ -178,7 +178,7 @@ pub fn burst_cells(seed: u64, t: f32, width: usize) -> String {
             .wrapping_mul(6364136223846793005);
         let idx = ((n >> 8) as usize + (t * 19.0) as usize) % (BRAILLE.len() - 1);
         // Keep one reserved rare star; last glyph is decorative only.
-        let ch = if n % 11 == 0 {
+        let ch = if n.is_multiple_of(11) {
             BRAILLE[BRAILLE.len() - 1]
         } else {
             BRAILLE[idx]

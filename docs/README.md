@@ -1,19 +1,22 @@
-Docs for SysCall-DAG
+# SysDAG Documentation
 
-Files created
-- flow.md — step-by-step runtime & pipeline flow (trace → graph → fingerprint → decision).
-- architecture.md — module responsibilities, data models, and algorithm pointers.
-- features.md — user-facing feature list, quickstart commands, and where to look for extension points.
+| File | Description |
+|------|-------------|
+| `flow.md` | End-to-end pipeline flow (trace → graph → fingerprint → decision) |
+| `architecture.md` | Module responsibilities, data models, and algorithm overview |
+| `features.md` | User-facing feature list and quickstart commands |
+| `EBPF_BUILD_AND_MEASURE.md` | How to build, load, and measure the eBPF collector |
+| `EBPF_RELAY_PROTOCOL.md` | JSONL envelope spec for the eBPF ring-buffer relay |
 
-Suggested next steps for maintainers
-1. Review docs and add module-level examples (small code snippets) where helpful.
-2. Add architecture diagrams (mermaid) for onboarding if desired.
-3. Run `cargo test` to validate unchanged behavior after doc additions.
+## Repository layout
 
-Repository layout reminder
-- src/ — implementation (see architecture.md)
-- configs/ — default configuration
-- tests/ — synthetic runtime fixtures and pipeline tests
-- examples/ — reserved for local, user-supplied targets
-
-If more documentation is needed (API references, dev setup, CI), specify and a follow-up commit will be added.
+```text
+src/          Core implementation (parser, graph, detector, experiments, TUI, streaming)
+tools/        Browser graph visualizer (viewer.html + d3.min.js)
+ebpf/         Raw-syscall BPF program (sysdag.bpf.c)
+tests/        Unit and acceptance tests using synthetic traces
+examples/     Sample C, Python, and shell programs for train/monitor
+docs/         This documentation
+configs/      Default configuration (default.toml)
+scripts/      Overhead measurement harness
+```

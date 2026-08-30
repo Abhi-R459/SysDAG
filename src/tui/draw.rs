@@ -670,10 +670,6 @@ fn fade_line(index: usize, app: &App, line: Line<'static>) -> Line<'static> {
     fade(index, app, line.spans, TEXT)
 }
 
-fn render_tree(g: &GraphRecord) -> Vec<Line<'static>> {
-    render_tree_filtered(g, &super::app::FilterMode::All)
-}
-
 fn render_tree_filtered(g: &GraphRecord, filter: &super::app::FilterMode) -> Vec<Line<'static>> {
     let mut kids: HashMap<&str, Vec<(String, &str)>> = HashMap::new();
     let mut incoming = HashMap::new();

@@ -11,6 +11,7 @@ pub const CLEAN_TRACE: &str = r#"
 1000.000080 write(1</dev/pts/0>, "done\n", 5) = 5 <0.000005>
 "#;
 
+#[allow(dead_code)]
 pub const ATTACK_TRACE: &str = r#"
 1000.000001 openat(AT_FDCWD, "/guest/www/index.html", O_RDONLY) = 3</guest/www/index.html> <0.000010>
 1000.000020 read(3</guest/www/index.html>, "ok\n", 4096) = 3 <0.000008>
