@@ -142,7 +142,8 @@ fn peak_rss_bytes() -> Option<u64> {
     {
         let s = fs::read_to_string("/proc/self/status").ok()?;
         let line = s.lines().find(|x| x.starts_with("VmHWM:"))?;
-        return line.split_whitespace()
+        return line
+            .split_whitespace()
             .nth(1)?
             .parse::<u64>()
             .ok()
