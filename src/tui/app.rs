@@ -101,7 +101,7 @@ impl Session {
 
 pub enum Analysis {
     Pending,
-    Ready(RunReport),
+    Ready(Box<RunReport>),
     Failed(String),
 }
 
@@ -151,6 +151,7 @@ pub struct App {
     pub rows_started: Instant,
     pub burst_started: Option<Instant>,
     pub burst_seed: u64,
+    pub notice: Option<(Instant, String)>,
     pub opened: Instant,
     pub frame_dt: Duration,
     pub fx: Option<tachyonfx::Effect>,
@@ -200,6 +201,7 @@ impl App {
             rows_started: Instant::now(),
             burst_started: None,
             burst_seed: 0,
+            notice: None,
             opened: Instant::now(),
             frame_dt: Duration::from_millis(16),
             fx: None,
@@ -252,7 +254,7 @@ impl App {
         self.rows_started = Instant::now();
         self.focus.snap(1.0);
         self.focus.set(0.0);
-        self.analysis = Analysis::Ready(report);
+        self.analysis = Analysis::Ready(Box::new(report));
     }
 
     pub fn tick(&mut self, dt: Duration) {

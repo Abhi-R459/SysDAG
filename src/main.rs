@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 
 use sysdag::config::Config;
 use sysdag::help::{ABOUT, HELP};
-use sysdag::pipeline::{analyze_path_opts, print_report, run_demo, Mode};
+use sysdag::pipeline::{analyze_path_opts, print_report, Mode};
 use sysdag::sandbox::doctor;
 use sysdag::tui::{self, LandingAction, Session};
 use sysdag::visualizer::to_dot;
@@ -63,8 +63,6 @@ enum Command {
     Train(RunArgs),
     /// Score a run against a frozen baseline
     Monitor(RunArgs),
-    /// Train on clean demo workloads, then score a decoy exfiltration
-    Demo,
     /// Check host prerequisites (Docker / guest image)
     Doctor,
     /// Print Graphviz DOT for a saved GraphRecord JSON
@@ -374,7 +372,6 @@ fn real_main() -> Result<i32> {
             doctor()?;
             Ok(0)
         }
-        Some(Command::Demo) => run_demo(&cfg, &work, cli.json),
         Some(Command::Viz { graph }) => {
             let text = std::fs::read_to_string(&graph)?;
             let g: sysdag::graph::GraphRecord = serde_json::from_str(&text)?;
@@ -437,7 +434,6 @@ fn real_main() -> Result<i32> {
                 if tui::should_open(cli.plain, cli.json) {
                     return match tui::run_landing()? {
                         LandingAction::Quit => Ok(0),
-                        LandingAction::Demo => run_demo(&cfg, &work, cli.json),
                         LandingAction::Run { path, args } => dispatch(
                             &path,
                             Mode::Auto,

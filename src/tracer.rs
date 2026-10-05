@@ -763,6 +763,7 @@ pub fn looks_like_strace(text: &str) -> bool {
 pub const STRACE_FILTER: &str = "%file,%network,%desc,%process";
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod tests {
     use super::*;
 

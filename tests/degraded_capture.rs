@@ -1,5 +1,7 @@
 //! Phase 1.3 acceptance: degraded capture must cap ANOMALOUS at REVIEW.
 
+mod fixtures;
+use fixtures::{synthetic_trace, ATTACK_TRACE, CLEAN_TRACE};
 use std::path::PathBuf;
 
 use sysdag::config::Config;
@@ -17,12 +19,6 @@ fn cfg() -> Config {
     c
 }
 
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
-
 #[test]
 fn degraded_capture_caps_anomalous_at_review() {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-degraded");
@@ -32,7 +28,7 @@ fn degraded_capture_caps_anomalous_at_review() {
     let baselines = tmp.join("baselines");
 
     let train = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&tmp.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &tmp,
@@ -47,7 +43,7 @@ fn degraded_capture_caps_anomalous_at_review() {
     let mut mon_cfg = cfg.clone();
     mon_cfg.detector.max_degraded_rate_pct = 0.0; // any loss degrades
     let mon = analyze_path(
-        &fixture("attack.strace"),
+        &synthetic_trace(&tmp.join("input"), "attack.strace", ATTACK_TRACE),
         Mode::Monitor,
         &cfg,
         &tmp,
@@ -60,8 +56,11 @@ fn degraded_capture_caps_anomalous_at_review() {
 
     // Rebuild windows from the monitor events with an artificially degraded
     // GraphQuality so the DEGRADED_CAPTURE rule must fire.
-    let (events, _stats) =
-        sysdag::tracer::parse_strace_path(&fixture("attack.strace"), &mon_cfg).unwrap();
+    let (events, _stats) = sysdag::tracer::parse_strace_path(
+        &synthetic_trace(&tmp.join("input"), "attack.strace", ATTACK_TRACE),
+        &mon_cfg,
+    )
+    .unwrap();
     assert!(!events.is_empty());
 
     let degraded_quality = GraphQuality {

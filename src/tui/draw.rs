@@ -236,7 +236,15 @@ fn draw_workspace(f: &mut Frame, area: Rect, app: &App) {
 fn draw_footer(f: &mut Frame, area: Rect, app: &App) {
     f.render_widget(Block::default().style(Style::default().bg(SURFACE)), area);
     let view = app.view.title();
-    let hint = format!("  {view}   tab views   1-4 jump   j/k move   [ ] window   q quit");
+    let hint = if app
+        .notice
+        .as_ref()
+        .is_some_and(|(opened, _)| opened.elapsed().as_secs() < 3)
+    {
+        format!("  {}", app.notice.as_ref().unwrap().1)
+    } else {
+        format!("  {view}   tab views   1-4 jump   j/k move   [ ] window   v browser   q quit")
+    };
     f.render_widget(Paragraph::new(Span::styled(hint, fg(DIM))), area);
 }
 
@@ -660,10 +668,6 @@ fn fade(index: usize, app: &App, mut spans: Vec<Span<'static>>, target: Color) -
 
 fn fade_line(index: usize, app: &App, line: Line<'static>) -> Line<'static> {
     fade(index, app, line.spans, TEXT)
-}
-
-fn render_tree(g: &GraphRecord) -> Vec<Line<'static>> {
-    render_tree_filtered(g, &super::app::FilterMode::All)
 }
 
 fn render_tree_filtered(g: &GraphRecord, filter: &super::app::FilterMode) -> Vec<Line<'static>> {

@@ -148,7 +148,7 @@ pub fn build_windows(
         if cfg.window.flush_on_exec && ev.syscall.name.starts_with("execve") && ev.success() {
             if !buf.is_empty() {
                 out.push(emit_window(
-                    &buf.make_contiguous().to_vec(),
+                    buf.make_contiguous(),
                     &state,
                     cfg,
                     run_id,
@@ -366,6 +366,7 @@ fn clone_state(ps: &ProcessState) -> ProcessState {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_window(
     events: &[&TraceEvent],
     live: &HashMap<i32, ProcessState>,
@@ -778,6 +779,7 @@ pub fn validate_graph(g: &GraphRecord) -> Result<(), String> {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod tests {
     use super::*;
     use crate::event::{CaptureInfo, EventArgs, ProcessRef, SyscallRef};

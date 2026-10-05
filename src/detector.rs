@@ -842,9 +842,8 @@ mod tests {
 
     #[test]
     fn thresholds_split_decisions() {
-        assert!(0.2 < 0.35);
-        assert!(0.40 >= 0.35 && 0.40 < 0.45);
-        assert!(0.8 >= 0.45);
+        let detector = Config::default().detector;
+        assert!(detector.threshold_review < detector.threshold_alert);
     }
 
     #[test]

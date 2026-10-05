@@ -1,3 +1,5 @@
+mod fixtures;
+use fixtures::{synthetic_trace, ATTACK_TRACE, CLEAN_TRACE};
 use std::path::PathBuf;
 
 use sysdag::config::Config;
@@ -11,12 +13,6 @@ fn cfg() -> Config {
     c
 }
 
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
-
 #[test]
 fn train_then_monitor_flags_exfiltration() {
     let tmp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-it");
@@ -26,7 +22,7 @@ fn train_then_monitor_flags_exfiltration() {
     let baselines = tmp.join("baselines");
 
     let train = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&tmp.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &tmp,
@@ -40,7 +36,7 @@ fn train_then_monitor_flags_exfiltration() {
     assert!(!train.encoded.is_empty());
 
     let clean = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&tmp.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Monitor,
         &cfg,
         &tmp,
@@ -57,7 +53,7 @@ fn train_then_monitor_flags_exfiltration() {
     assert!(clean.decisions.iter().any(|d| d.exact_known));
 
     let attack = analyze_path(
-        &fixture("attack.strace"),
+        &synthetic_trace(&tmp.join("input"), "attack.strace", ATTACK_TRACE),
         Mode::Monitor,
         &cfg,
         &tmp,
@@ -89,8 +85,9 @@ fn incremental_monitor_emits_a_closed_window() {
     cfg.window.overlap = 1;
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-stream");
     let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
     let train = analyze_path(
-        &fixture("clean.strace"),
+        &synthetic_trace(&root.join("input"), "clean.strace", CLEAN_TRACE),
         Mode::Train,
         &cfg,
         &root,
@@ -101,7 +98,11 @@ fn incremental_monitor_emits_a_closed_window() {
     )
     .unwrap();
     let baseline = sysdag::detector::load_baseline(train.baseline_path.as_ref().unwrap()).unwrap();
-    let (events, _) = sysdag::tracer::parse_strace_path(&fixture("attack.strace"), &cfg).unwrap();
+    let (events, _) = sysdag::tracer::parse_strace_path(
+        &synthetic_trace(&root.join("input"), "attack.strace", ATTACK_TRACE),
+        &cfg,
+    )
+    .unwrap();
     let decisions = sysdag::pipeline::monitor_event_stream(events, &cfg, &baseline, "live", 32);
     assert!(!decisions.is_empty());
 }
@@ -112,7 +113,7 @@ fn graphs_are_dags() {
     let _ = std::fs::remove_dir_all(&tmp);
     std::fs::create_dir_all(&tmp).unwrap();
     let report = analyze_path(
-        &fixture("attack.strace"),
+        &synthetic_trace(&tmp.join("input"), "attack.strace", ATTACK_TRACE),
         Mode::Train,
         &cfg(),
         &tmp,

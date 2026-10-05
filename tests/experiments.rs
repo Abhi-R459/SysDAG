@@ -1,3 +1,5 @@
+mod fixtures;
+use fixtures::{synthetic_trace, ATTACK_TRACE, CLEAN_TRACE};
 use std::path::PathBuf;
 
 use sysdag::{
@@ -7,12 +9,6 @@ use sysdag::{
     },
 };
 
-fn fixture(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures")
-        .join(name)
-}
-
 #[test]
 fn imports_by_run_calibrates_and_evaluates() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target/sysdag-experiments");
@@ -21,11 +17,19 @@ fn imports_by_run_calibrates_and_evaluates() {
     for i in 0..5 {
         let p = source.join(format!("clean/run-{i}/trace.strace"));
         std::fs::create_dir_all(p.parent().unwrap()).unwrap();
-        std::fs::copy(fixture("clean.strace"), p).unwrap();
+        std::fs::copy(
+            synthetic_trace(&root.join("templates"), "clean.strace", CLEAN_TRACE),
+            p,
+        )
+        .unwrap();
     }
     let attack = source.join("attacks/exfil/trace.strace");
     std::fs::create_dir_all(attack.parent().unwrap()).unwrap();
-    std::fs::copy(fixture("attack.strace"), &attack).unwrap();
+    std::fs::copy(
+        synthetic_trace(&root.join("templates"), "attack.strace", ATTACK_TRACE),
+        &attack,
+    )
+    .unwrap();
 
     let mut cfg = Config::default();
     cfg.window.size = 4;

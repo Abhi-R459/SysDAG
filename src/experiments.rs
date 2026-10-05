@@ -150,9 +150,7 @@ fn peak_rss_bytes() -> Option<u64> {
             .map(|x| x * 1024);
     }
     #[cfg(not(target_os = "linux"))]
-    {
-        None
-    }
+    None
 }
 
 pub fn import_dataset(source: &Path, work: &Path, requested: Option<&str>) -> Result<PathBuf> {

@@ -8,16 +8,14 @@ use crate::canonical::digest_bytes;
 use crate::config::Config;
 use crate::detector::{
     find_baseline, load_baseline, save_baseline, score, train_baseline_with_provenance,
-    BaselineManifest, DecisionRecord, TrainingProvenance,
+    BaselineManifest, DecisionRecord,
 };
 use crate::event::{ParseStats, TraceEvent};
 use crate::features::{encode, EncodedGraph};
 use crate::graph::{build_windows, validate_graph, GraphQuality, GraphRecord};
-use crate::sandbox::{
-    file_sha256, prepare_run_dir, run_in_microvm, stage_demo_world, stage_target,
-};
+use crate::sandbox::{file_sha256, prepare_run_dir, run_in_microvm, stage_target};
 use crate::streaming::WindowBuilder;
-use crate::tracer::{looks_like_strace, parse_strace_path, parse_strace_path_with_privacy_map};
+use crate::tracer::{looks_like_strace, parse_strace_path_with_privacy_map};
 use crate::visualizer::{format_decision, write_graph_artifacts};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -100,6 +98,13 @@ fn write_private_path_map(
     }
     Ok(())
 }
+type IngestResult = (
+    Vec<TraceEvent>,
+    String,
+    PathBuf,
+    GraphQuality,
+    Option<ParseStats>,
+);
 
 fn ingest(
     path: &Path,
@@ -108,13 +113,7 @@ fn ingest(
     run_id: &str,
     target_args: &[String],
     app_root_override: Option<&str>,
-) -> Result<(
-    Vec<TraceEvent>,
-    String,
-    PathBuf,
-    GraphQuality,
-    Option<ParseStats>,
-)> {
+) -> Result<IngestResult> {
     let mut cfg = cfg.clone();
     if let Some(root) = app_root_override {
         cfg.labels.app_root = root.to_string();
@@ -164,7 +163,6 @@ fn ingest(
         InputKind::Program => {
             cfg.labels.app_root = "/guest/www".into();
             let run_dir = prepare_run_dir(work_root, run_id)?;
-            stage_demo_world(&run_dir)?;
             let (_dest, sha) = stage_target(&run_dir, path)?;
             let rel = format!(
                 "target/{}",
@@ -385,118 +383,6 @@ pub fn analyze_path_opts(
         }
         Mode::Auto => unreachable!(),
     }
-}
-
-pub fn run_demo(cfg: &Config, work_root: &Path, json: bool) -> Result<i32> {
-    let demo_root = work_root.join("demo");
-    fs::create_dir_all(&demo_root)?;
-    let run_dir = prepare_run_dir(&demo_root, "world")?;
-    stage_demo_world(&run_dir)?;
-    let src = run_dir.join("target/workload.c");
-    let mut train_cfg = cfg.clone();
-    train_cfg.labels.app_root = "/guest/www".into();
-    // Demo programs are short; a smaller window still exercises the full pipeline.
-    if train_cfg.window.size > 32 {
-        train_cfg.window.size = 32;
-        train_cfg.window.overlap = 8;
-    }
-
-    let mut encoded_train = Vec::new();
-    let mut last_sha = String::new();
-    for (i, mode) in ["clean", "clean-alt"].iter().enumerate() {
-        let id = format!("train-{i}");
-        let rd = prepare_run_dir(&demo_root, &id)?;
-        stage_demo_world(&rd)?;
-        fs::copy(&src, rd.join("target/workload.c"))?;
-        let sb = run_in_microvm(&train_cfg, &rd, "target/workload.c", &[mode.to_string()])?;
-        last_sha = sb.target_sha256.clone();
-        let (events, stats) = parse_strace_path(&sb.traces_dir, &train_cfg)?;
-        let q = GraphQuality {
-            capture_loss: stats.lost_events_estimate,
-            unknown_calls: stats.unknown_syscalls,
-            rejected_lines: stats.rejected,
-            ..Default::default()
-        };
-        encoded_train.extend(encode_all(&events, &train_cfg, &id, &last_sha, q)?);
-    }
-    let provenance = TrainingProvenance {
-        run_ids: vec!["train-0".into(), "train-1".into()],
-        total_events: 0,
-        window_count: encoded_train.len() as u64,
-        input_digests: BTreeMap::from([("workload.c".into(), last_sha.clone())]),
-        trained_with_config_sha256: train_cfg.digest(),
-    };
-    let baseline = train_baseline_with_provenance(
-        &encoded_train,
-        &[],
-        &train_cfg,
-        &last_sha,
-        &last_sha,
-        Some(provenance),
-    );
-    let bdir = demo_root.join("baselines");
-    let bpath = save_baseline(&bdir, &baseline)?;
-
-    let monitor = |tag: &str, arg: &str| -> Result<Vec<DecisionRecord>> {
-        let rd = prepare_run_dir(&demo_root, tag)?;
-        stage_demo_world(&rd)?;
-        fs::copy(&src, rd.join("target/workload.c"))?;
-        let sb = run_in_microvm(&train_cfg, &rd, "target/workload.c", &[arg.to_string()])?;
-        let (events, stats) = parse_strace_path(&sb.traces_dir, &train_cfg)?;
-        let q = GraphQuality {
-            capture_loss: stats.lost_events_estimate,
-            unknown_calls: stats.unknown_syscalls,
-            rejected_lines: stats.rejected,
-            ..Default::default()
-        };
-        let enc = encode_all(&events, &train_cfg, tag, &sb.target_sha256, q)?;
-        for (i, e) in enc.iter().enumerate() {
-            write_graph_artifacts(&rd.join("graphs").join(format!("w{i:04}")), &e.graph)?;
-        }
-        Ok(enc
-            .iter()
-            .map(|e| score(e, &baseline, &train_cfg))
-            .collect())
-    };
-
-    let clean = monitor("heldout-clean", "clean")?;
-    let attack = monitor("attack-exfil", "attack")?;
-
-    if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "baseline": bpath,
-                "clean": clean,
-                "attack": attack,
-            }))?
-        );
-    } else {
-        println!("SysCall-DAG demo");
-        println!("  baseline {}", bpath.display());
-        println!("  clean windows:");
-        for d in &clean {
-            println!("    {}  {}", d.window_id, format_decision(d));
-        }
-        println!("  attack windows:");
-        for d in &attack {
-            println!("    {}  {}", d.window_id, format_decision(d));
-        }
-        let anomalous = attack
-            .iter()
-            .any(|d| d.decision == "ANOMALOUS" || d.decision == "REVIEW");
-        if anomalous {
-            println!("\nAttack window diverged from the clean file-root baseline (decoy read + network send).");
-        } else {
-            println!("\nWarning: attack did not cross the review threshold; inspect graphs under .sysdag/demo/");
-        }
-    }
-
-    let failed_clean = clean.iter().any(|d| d.decision == "ANOMALOUS");
-    let caught = attack
-        .iter()
-        .any(|d| d.decision == "ANOMALOUS" || d.decision == "REVIEW");
-    Ok(if !failed_clean && caught { 0 } else { 2 })
 }
 
 pub fn print_report(report: &RunReport, json: bool) -> Result<i32> {
